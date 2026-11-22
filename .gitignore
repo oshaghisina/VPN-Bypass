@@ -1,0 +1,10 @@
+# Per-machine state written by the script -- never commit
+servers.txt
+resolved-history.txt
+last-applied.txt
+last-success.env
+runtime-state.env
+data-dir
+*.bak*
+*.stale-*
+*.log
