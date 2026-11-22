@@ -1,6 +1,6 @@
-# WireGuard SSH Bypass Utility: How It Works
+# VPN Bypass: How It Works
 
-This document is the full internal and operational reference for the macOS WireGuard SSH bypass utility in this directory. It is written for both human operators and AI tools that need to understand how the utility behaves, what files it uses, and how its state changes over time.
+This document is the full internal and operational reference for the macOS VPN bypass utility in this directory. It is written for both human operators and AI tools that need to understand how the utility behaves, what files it uses, and how its state changes over time.
 
 Use [README.md](./README.md) as the quickstart. Use this file when you need to understand the design, state flow, command semantics, and troubleshooting behavior.
 
@@ -10,7 +10,7 @@ Use [README.md](./README.md) as the quickstart. Use this file when you need to u
 
 When a full-tunnel VPN is active on macOS, traffic to every destination follows the VPN route. This utility creates host-specific macOS routes so selected server targets use the normal local network gateway instead of the tunnel.
 
-It was written for WireGuard and keeps that name in its paths and labels, but nothing in it is WireGuard-specific. A `/32` host route wins longest-prefix match over WireGuard's and OpenVPN `redirect-gateway def1`'s `0/1` + `128.0/1` and over a plain replaced `default` alike, and the physical gateway is detected without relying on the default route, so it also works with OpenVPN (either mode), IKEv2 (`ipsec`), and L2TP/PPTP (`ppp`).
+Nothing in it is specific to one VPN client. A `/32` host route wins longest-prefix match over WireGuard's and OpenVPN `redirect-gateway def1`'s `0/1` + `128.0/1` and over a plain replaced `default` alike, and the physical gateway is detected without relying on the default route, so it also works with OpenVPN (either mode), IKEv2 (`ipsec`), and L2TP/PPTP (`ppp`).
 
 The goal is:
 
@@ -75,7 +75,7 @@ This directory contains the complete utility bundle:
   - Snapshot of the exact IPv4 target set from the last successful `apply`.
   - Used as an additional cleanup and reporting source.
 
-- `com.nextcloud.ssh-wireguard-bypass.plist.example`
+- `com.vpn-bypass.plist.example`
   - Template plist for running the script automatically through `launchd`.
   - Used by the manual workflow and by `install-launchd`.
 
@@ -171,7 +171,7 @@ The script can be installed as a system LaunchDaemon. In that mode, `launchd` ru
 
 This is the persistence mechanism for macOS restarts, VPN reconnects, and network changes. The periodic run is what self-heals: moving to another Wi-Fi network or getting a new DHCP lease is noticed on the next run and every route is rebuilt.
 
-The daemon runs with `--timestamps` and logs to `/var/log/ssh-wireguard-bypass.log`, which `install-launchd` puts under `newsyslog` rotation.
+The daemon runs with `--timestamps` and logs to `/var/log/vpn-bypass.log`, which `install-launchd` puts under `newsyslog` rotation.
 
 ### Why history and snapshot both exist
 
@@ -197,10 +197,10 @@ This section explains the common ways to invoke the script from Terminal and whe
 The script file lives here:
 
 ```text
-$HOME/.local/share/wireguard-ssh-bypass/manage-ssh-bypass-routes.sh
+$HOME/.local/share/vpn-bypass/manage-ssh-bypass-routes.sh
 ```
 
-That directory is the working copy and holds the state files. A second, root-owned copy of the script is deployed at `/usr/local/libexec/wireguard-ssh-bypass/`; it is the one the LaunchDaemon runs and the one the `bypass` shell alias points at. A `data-dir` file beside the deployed script names the directory above, so both copies read and write the same `servers.txt`, history, and snapshot.
+That directory is the working copy and holds the state files. A second, root-owned copy of the script is deployed at `/usr/local/libexec/vpn-bypass/`; it is the one the LaunchDaemon runs and the one the `bypass` shell alias points at. A `data-dir` file beside the deployed script names the directory above, so both copies read and write the same `servers.txt`, history, and snapshot.
 
 State directory resolution order: `$BYPASS_DATA_DIR`, then the `data-dir` pointer beside the script, then the script's own directory. Explicit `--config`, `--history`, and `--snapshot` override all three.
 
@@ -211,7 +211,7 @@ When updating the deployed copy, copy to a temporary name in the same directory 
 This is the easiest form for normal interactive use.
 
 ```bash
-cd "$HOME/.local/share/wireguard-ssh-bypass"
+cd "$HOME/.local/share/vpn-bypass"
 ./manage-ssh-bypass-routes.sh
 ```
 
@@ -225,7 +225,7 @@ Important:
 Use this when you are in another directory and do not want to `cd` first.
 
 ```bash
-"$HOME/.local/share/wireguard-ssh-bypass/manage-ssh-bypass-routes.sh" view
+"$HOME/.local/share/vpn-bypass/manage-ssh-bypass-routes.sh" view
 ```
 
 This is usually the safest command shape when:
@@ -239,7 +239,7 @@ This is usually the safest command shape when:
 If the script already has execute permission, this is optional. It is still useful when you want to invoke the script through the shell directly.
 
 ```bash
-bash "$HOME/.local/share/wireguard-ssh-bypass/manage-ssh-bypass-routes.sh" view
+bash "$HOME/.local/share/vpn-bypass/manage-ssh-bypass-routes.sh" view
 ```
 
 Use this when:
@@ -254,14 +254,14 @@ Menu mode means running the script with no action argument.
 Examples:
 
 ```bash
-cd "$HOME/.local/share/wireguard-ssh-bypass"
+cd "$HOME/.local/share/vpn-bypass"
 ./manage-ssh-bypass-routes.sh
 ```
 
 or:
 
 ```bash
-"$HOME/.local/share/wireguard-ssh-bypass/manage-ssh-bypass-routes.sh"
+"$HOME/.local/share/vpn-bypass/manage-ssh-bypass-routes.sh"
 ```
 
 Menu mode is best for:
@@ -350,14 +350,14 @@ This is the right mode when you want the routes to persist across reboot, reconn
 For normal interactive usage:
 
 ```bash
-cd "$HOME/.local/share/wireguard-ssh-bypass"
+cd "$HOME/.local/share/vpn-bypass"
 ./manage-ssh-bypass-routes.sh
 ```
 
 For one-off commands from anywhere:
 
 ```bash
-"$HOME/.local/share/wireguard-ssh-bypass/manage-ssh-bypass-routes.sh" status
+"$HOME/.local/share/vpn-bypass/manage-ssh-bypass-routes.sh" status
 ```
 
 Use `sudo` only for:
@@ -394,7 +394,7 @@ Usually means one of these:
 Possible fixes:
 
 ```bash
-chmod +x "$HOME/.local/share/wireguard-ssh-bypass/manage-ssh-bypass-routes.sh"
+chmod +x "$HOME/.local/share/vpn-bypass/manage-ssh-bypass-routes.sh"
 ```
 
 If the problem is state-file ownership, inspect the file permissions before changing them.
@@ -714,7 +714,7 @@ Example:
 
 `source-ip` is the local address the routes were created under. A different address at the next `apply` forces every route to be rebuilt.
 
-### `com.nextcloud.ssh-wireguard-bypass.plist.example`
+### `com.vpn-bypass.plist.example`
 
 This is a template file with placeholders:
 
@@ -996,7 +996,7 @@ Checks:
 
 ```bash
 ./manage-ssh-bypass-routes.sh launchd-status
-sudo launchctl print system/com.nextcloud.ssh-wireguard-bypass
+sudo launchctl print system/com.vpn-bypass
 ```
 
 Common causes:

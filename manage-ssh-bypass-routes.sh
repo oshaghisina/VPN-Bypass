@@ -31,11 +31,11 @@ CONFIG_FILE="${DATA_DIR}/servers.txt"
 HISTORY_FILE="${DATA_DIR}/resolved-history.txt"
 SNAPSHOT_FILE="${DATA_DIR}/last-applied.txt"
 SSH_CONFIG_FILE="${HOME:-}/.ssh/config"
-PLIST_TEMPLATE_FILE="${SCRIPT_DIR}/com.nextcloud.ssh-wireguard-bypass.plist.example"
-LAUNCHD_LABEL="com.nextcloud.ssh-wireguard-bypass"
+PLIST_TEMPLATE_FILE="${SCRIPT_DIR}/com.vpn-bypass.plist.example"
+LAUNCHD_LABEL="com.vpn-bypass"
 LAUNCHD_PLIST_PATH="/Library/LaunchDaemons/${LAUNCHD_LABEL}.plist"
 
-LOG_FILE_PATH="/var/log/ssh-wireguard-bypass.log"
+LOG_FILE_PATH="/var/log/vpn-bypass.log"
 NEWSYSLOG_CONF_PATH="/etc/newsyslog.d/${LAUNCHD_LABEL}.conf"
 
 DRY_RUN=0
@@ -2374,7 +2374,7 @@ show_menu() {
   while :; do
     cat <<'EOF'
 
-macOS SSH WireGuard Bypass
+macOS VPN Bypass
 1. View servers
 2. Add server
 3. Delete server

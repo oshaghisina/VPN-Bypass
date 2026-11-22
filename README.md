@@ -1,6 +1,6 @@
-# macOS SSH WireGuard Bypass
+# macOS VPN Bypass
 
-This utility adds per-host routes on macOS so selected servers use your direct network gateway instead of a full-tunnel VPN. It started as a WireGuard tool and keeps that name, but the mechanism is VPN-agnostic: it works the same with OpenVPN (with or without `redirect-gateway def1`), IKEv2, and L2TP, for a list of targets that should bypass the VPN.
+This utility adds per-host routes on macOS so selected servers use your direct network gateway instead of a full-tunnel VPN. The mechanism is VPN-agnostic: it works the same with OpenVPN (with or without `redirect-gateway def1`), IKEv2, and L2TP, for a list of targets that should bypass the VPN.
 
 For the full design, state flow, command semantics, troubleshooting reference, and all common ways to run the script, read [HOW-IT-WORKS.md](./HOW-IT-WORKS.md).
 
@@ -14,7 +14,7 @@ For the full design, state flow, command semantics, troubleshooting reference, a
   - Hostname-to-IPv4 memory with a last-seen time per mapping. It keeps a hostname bypassed while DNS is unavailable and lets `apply` clean up addresses a hostname has left.
 - `last-applied.txt`
   - Auto-saved snapshot of the exact IPv4 targets from the last successful `apply`, plus the local source address they were bound to.
-- `com.nextcloud.ssh-wireguard-bypass.plist.example`
+- `com.vpn-bypass.plist.example`
   - `launchd` example for automatic re-apply as a root daemon.
 - `data-dir` (optional, beside the script)
   - One line naming the directory that holds `servers.txt` and the two generated files. Used when the script is installed somewhere root-owned, such as `/usr/local/libexec`, so the interactive menu and the daemon work on the same writable state. `BYPASS_DATA_DIR` overrides it; explicit `--config`/`--history`/`--snapshot` override both.
@@ -208,7 +208,7 @@ Expected result:
 - `gateway:` should be your normal router, not `utun`
 - `interface:` should be a physical interface such as `en0` or `en7`
 
-With WireGuard still connected, test SSH if you want a manual end-to-end check:
+With the VPN still connected, test SSH if you want a manual end-to-end check:
 
 ```bash
 ssh your-user@203.0.113.10
@@ -303,7 +303,7 @@ sudo ./manage-ssh-bypass-routes.sh install-launchd
 sudo ./manage-ssh-bypass-routes.sh uninstall-launchd
 ```
 
-`install-launchd` renders the plist template with the current script, config, history, and snapshot paths, installs it into `/Library/LaunchDaemons`, sets `root:wheel` ownership and `644` mode, then bootstraps and starts the daemon. It also installs a `newsyslog` rule at `/etc/newsyslog.d/com.nextcloud.ssh-wireguard-bypass.conf` that rotates `/var/log/ssh-wireguard-bypass.log` at 1 MB, keeping three compressed generations. `uninstall-launchd` removes both.
+`install-launchd` renders the plist template with the current script, config, history, and snapshot paths, installs it into `/Library/LaunchDaemons`, sets `root:wheel` ownership and `644` mode, then bootstraps and starts the daemon. It also installs a `newsyslog` rule at `/etc/newsyslog.d/com.vpn-bypass.conf` that rotates `/var/log/vpn-bypass.log` at 1 MB, keeping three compressed generations. `uninstall-launchd` removes both.
 
 The daemon runs with `--timestamps`, so every log line starts with the local time. Re-run `install-launchd` after updating the script or the template to pick up plist changes.
 
@@ -311,25 +311,25 @@ The daemon runs with `--timestamps`, so every log line starts with the local tim
 
 Because route state can be replaced after reboot or VPN reconnect, use the included `launchd` example as a root daemon.
 
-1. Replace the placeholders in [com.nextcloud.ssh-wireguard-bypass.plist.example](./com.nextcloud.ssh-wireguard-bypass.plist.example):
+1. Replace the placeholders in [com.vpn-bypass.plist.example](./com.vpn-bypass.plist.example):
    - `__SCRIPT_FILE__`
    - `__CONFIG_PATH__`
    - `__HISTORY_PATH__`
    - `__SNAPSHOT_PATH__`
-2. Save the edited file as `/Library/LaunchDaemons/com.nextcloud.ssh-wireguard-bypass.plist`.
+2. Save the edited file as `/Library/LaunchDaemons/com.vpn-bypass.plist`.
 3. Set ownership and permissions:
 
 ```bash
-sudo chown root:wheel /Library/LaunchDaemons/com.nextcloud.ssh-wireguard-bypass.plist
-sudo chmod 644 /Library/LaunchDaemons/com.nextcloud.ssh-wireguard-bypass.plist
+sudo chown root:wheel /Library/LaunchDaemons/com.vpn-bypass.plist
+sudo chmod 644 /Library/LaunchDaemons/com.vpn-bypass.plist
 ```
 
 4. Load the daemon:
 
 ```bash
-sudo launchctl bootstrap system /Library/LaunchDaemons/com.nextcloud.ssh-wireguard-bypass.plist
-sudo launchctl enable system/com.nextcloud.ssh-wireguard-bypass
-sudo launchctl kickstart -k system/com.nextcloud.ssh-wireguard-bypass
+sudo launchctl bootstrap system /Library/LaunchDaemons/com.vpn-bypass.plist
+sudo launchctl enable system/com.vpn-bypass
+sudo launchctl kickstart -k system/com.vpn-bypass
 ```
 
 The example daemon:
